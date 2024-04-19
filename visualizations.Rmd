@@ -1,0 +1,306 @@
+---
+title: "Wastewater Visualizations"
+author: "Laura Wiesner"
+date: "4/19/2022"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(lubridate)
+library(mosaic)
+```
+
+```{r}
+data <- read.csv("Mines_Park_pH_Fault.csv", stringsAsFactors = FALSE)
+attr(data$dateTime, "tzone") <- "America/Denver"
+
+head(data)
+tail(data)
+
+colnames(data)
+dim(data)
+#head(data$dateTime)
+tail(data$dateTime)
+```
+
+```{r}
+#April 24, 2010, 10:00 AM.
+
+month.val <- month(data$dateTime)
+day.val <- day(data$dateTime)
+hour.val <- hour(data$dateTime)
+fault.time <- which(month.val==4 & day.val==24 & hour.val==10)[1]
+data$dateTime[fault.time]
+```
+
+```{r}
+######################
+# Plot of pH
+# The biological community cannot survive if
+# the pH is less than 6.5
+# It clearly dips below this value
+######################
+
+ts.plot(data$ras_ph, xlab="Index", ylab="pH")
+abline(h=6.5,col=4,lwd=2)
+abline(v=fault.time,col=2,lwd=2)
+```
+
+```{r}
+######################
+# Plot of MBR Flow
+######################
+ts.plot(data$mbr_1_perm_flow, xlab="Index", ylab="MBR 1, Permeate Flow")
+abline(v=fault.time,col=2,lwd=2)
+
+ts.plot(data$mbr_2_perm_flow, xlab="Index", ylab="MBR 2, Permeate Flow")
+abline(v=fault.time,col=2,lwd=2)
+```
+
+```{r}
+######################
+# Sorting the variables into
+# groups
+######################
+## cyclic variables
+cyclic_vars <- c("cos_daily", 
+                     "sin_daily", 
+                     "cos_2hour", 
+                     "sin_2hour", 
+                     "cos_hourly", 
+                     "sin_hourly")
+##control variables
+control_vars <- c("bio_1_blow_flow", 
+                  "bio_2_blow_flow", 
+                  "mbr_1_tmp", 
+                  "mbr_2_tmp",
+                  "ambient_temp", 
+                  "bio_1_phase_1", 
+                  "bio_1_phase_2", 
+                  "bio_2_phase_1",
+                  "bio_2_phase_2", 
+                  "mbr_1_mode_1", 
+                  "mbr_1_mode_2", 
+                  "mbr_1_mode_4",
+                  "mbr_2_mode_1", 
+                  "mbr_2_mode_2", 
+                  "mbr_2_mode_4")
+
+## response variables
+response_vars <- c("mbr_1_perm_flow", 
+                   "mbr_2_perm_flow", 
+                   "ras_temp",
+                   "bio_1_do", 
+                   "bio_2_do", 
+                   "mbr_1_level", 
+                   "mbr_2_level", 
+                   "perm_turb", 
+                   "sewage_flow", 
+                   "bio_1_level", 
+                   "bio_2_level",
+                   "bio_1_temp", 
+                   "bio_2_temp", 
+                   "bio_1_tss", 
+                   "bio_2_tss", 
+                   "perm_tank_level", 
+                   "ras_do", 
+                   "ras_ph", 
+                   "perm_cond", 
+                   "ras_tss")
+                   
+#Other predictors                  
+scale_predictors <- c("bio_1_blow_flow",
+                      "bio_2_blow_flow", 
+                      "ambient_temp",
+                      "mbr_1_tmp", 
+                      "mbr_2_tmp")
+
+```
+
+```{r}
+x.cols<-NULL
+for(i in 1:length(scale_predictors)){
+	x.cols<-c(x.cols,which(colnames(data)==scale_predictors[i]))}
+for(i in 1:length(control_vars)){
+	x.cols<-c(x.cols,which(colnames(data)==control_vars[i]))}
+for(i in 1:length(cyclic_vars)){
+	x.cols<-c(x.cols,which(colnames(data)==cyclic_vars[i]))}
+
+y.cols<-NULL
+for(i in 1:length(response_vars)){
+	y.cols<-c(y.cols,which(colnames(data)==response_vars[i]))}
+```
+
+```{r}
+XX<-data[,x.cols]
+YY<-data[,y.cols]
+
+dim(XX)
+dim(YY)
+```
+
+```{r}
+hist(data$sewage_flow, xlab="Index", ylab="MBR 1, Permeate Flow")
+abline(v=fault.time,col=2,lwd=2)
+
+ts.plot(data$bio_1_blow_flow, xlab="Index", ylab="pH", main= " bio_1_blow_flow whole data ")
+abline(v=fault.time,col=2,lwd=2)
+
+ts.plot(data$bio_2_blow_flow, xlab="Index", ylab="pH", main= " bio_2_blow_flow whole data ")
+abline(v=fault.time,col=2,lwd=2)
+
+```
+
+
+```{r}
+#ts.plot(data$ambient_temp)
+#abline(v=fault.time,col=2,lwd=2)
+
+#ts.plot(data$mbr_1_mode_1, mian = "membrane bioreactor 1 mode 1")
+#abline(v=fault.time,col=2,lwd=2)
+
+ts.plot(data$mbr_1_perm_flow, main = "membrane bioreactor 1 flow")
+abline(v=fault.time,col=2,lwd=2)
+
+ts.plot(data$mbr_2_perm_flow, main = "membrane bioreactor 2 flow")
+abline(v=fault.time,col=2,lwd=2)
+
+ts.plot(data$ras_temp, main = "returned activtes solids temp")
+abline(v=fault.time,col=2,lwd=2)
+
+ts.plot(data$bio_1_do, main = "Dissolved  oxygen in bio tank 1")
+abline(v=fault.time,col=2,lwd=2)
+
+ts.plot(data$bio_1_blow_flow, main = " Flow of oxygen in bio tank 1")
+abline(v=fault.time,col=2,lwd=2)
+
+ts.plot(data$bio_2_do, main = "Dissolved  oxygen in bio tank 2")
+abline(v=fault.time,col=2,lwd=2)
+
+ts.plot(data$bio_2_blow_flow, main = " Flow of oxygen in bio tank 2")
+abline(v=fault.time,col=2,lwd=2)
+
+ts.plot(data$mbr_1_level, main = "level of MBR 1")
+abline(v=fault.time,col=2,lwd=2)
+
+ts.plot(data$mbr_2_level, main = "level of MBR 2")
+abline(v=fault.time,col=2,lwd=2)
+
+ts.plot(data$perm_turb, main = "perm turb")
+abline(v=fault.time,col=2,lwd=2)
+
+ts.plot(data$sewage_flow, main = "whole time sewage flow")
+abline(v=fault.time,col=2,lwd=2)
+
+ts.plot(data$bio_1_level, main = "bio tank 1 level")
+abline(v=fault.time,col=2,lwd=2)
+
+ts.plot(data$bio_2_level,  main = "bio tank 2 level")
+abline(v=fault.time,col=2,lwd=2)
+
+ts.plot(data$bio_1_temp,  main = "bio tank 1 temperature")
+abline(v=fault.time,col=2,lwd=2)
+
+ts.plot(data$bio_2_temp,  main = "bio tank 2 temperature")
+abline(v=fault.time,col=2,lwd=2)
+
+ts.plot(data$bio_1_tss,  main = "bio tank 1 total suspended solids")
+abline(v=fault.time,col=2,lwd=2)
+
+ts.plot(data$bio_2_tss, main = "bio tank 2 total suspended solids")
+abline(v=fault.time,col=2,lwd=2)
+
+ts.plot(data$perm_tank_level, main = "perm tank level")
+abline(v=fault.time,col=2,lwd=2)
+
+ts.plot(data$ras_do, main = "returned activated sludge dissolved oxygen")
+abline(v=fault.time,col=2,lwd=2)
+
+ts.plot(data$ras_ph, main = "returned activated sludge pH" )
+abline(v=fault.time,col=2,lwd=2)
+
+ts.plot(data$perm_cond, main = "perm conditions")
+abline(v=fault.time,col=2,lwd=2)
+
+ts.plot(data$ras_tss, main = "returned activated sludge total suspended solids")
+abline(v=fault.time,col=2,lwd=2)
+
+
+
+
+```
+
+```{r}
+hist(data$bio_1_blow_flow)
+hist(data$bio_2_blow_flow)
+
+hmm <- data[which(data$bio_1_blow_flow > 60), ]
+```
+
+```{r}
+start.time <- data$dateTime[1]
+
+print(fault.time)
+
+before <- data[data$dateTime < "2010-04-24 10:00:00", ]
+
+date <- ymd_hms(before$dateTime)
+
+before$date <- ymd_hms(before$dateTime)
+```
+
+```{r}
+ts.plot(before$ras_ph, xlab="Index", ylab="pH")
+abline(h=6.5,col=3,lwd=2)
+
+before2 <- before[which(before$ras_ph < 7.2), ]
+
+#range(before2$dateTime)
+
+before_low <- before[which(before$ras_ph < 6.5), ]
+
+range(before_low$dateTime)
+
+ts.plot(before_low$sewage_flow, xlab="Index", ylab="sewage flow", main = "Sewage flow corresponding to pH dip pre fault")
+abline(v=fault.time,col=2,lwd=2)
+
+ts.plot(before_low$ras_do, xlab="Index", ylab="ras do")
+abline(v=fault.time,col=2,lwd=2)
+
+```
+
+
+```{r}
+before <- data[data$dateTime < "2010-04-24 10:00:00", ]
+
+date <- ymd_hms(before$dateTime)
+
+before$date <- ymd_hms(before$dateTime)
+
+ts.plot(before$sewage_flow, xlab="Index", ylab="Sewage Flow", main = "Sewage Flow Before Fault")
+
+no_sewage_flow <- before[which(before$sewage_flow == 0), ]
+
+ts.plot(no_sewage_flow$perm_turb, xlab="Index", ylab="Sewage Flow")
+```
+
+
+
+```{r}
+increase <- data[17132:17681, ]
+
+ts.plot(data$sewage_flow, main = "Sewage Flow of the System Over Entire Timeframe", xlab = "Time", ylab = " Sewage Flow")
+abline(v=fault.time,col=2,lwd=2)
+
+ts.plot(increase$sewage_flow, main = "Sewage Flow of the System during Odd Behavior", xlab = "Time", ylab = " Sewage Flow")
+
+
+
+ts.plot(data$mbr_2_level,main = "MBR Tank 2 Level of the System Over Entire Timeframe", xlab = "Time", ylab = " MBR Tank 2 Level")
+abline(v=fault.time,col=2,lwd=2)
+
+
+ts.plot(increase$mbr_2_level, main = "MBR Tank 2 Level of the System during Odd Behavior", xlab = "Time", ylab = " MBR Tank 2 Level")
+
+```
